@@ -15,8 +15,7 @@ import {
     LockScreen
 } from '../../wailsjs/go/backend/App';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
-import { WindowShow } from '../../wailsjs/runtime/runtime';
-import { Play, Pause, Square } from 'lucide-react';
+import {PlayCircle, PauseCircle, StopCircle, Play, PlayIcon, StopCircleIcon, PlayCircleIcon} from 'lucide-react';
 
 export function PomodoroTimer() {
   const { t } = useTranslation();
@@ -234,7 +233,7 @@ export function PomodoroTimer() {
               <div className="space-y-2">
                 <Label>{t('pomodoro_duration')}</Label>
                 <div className="flex gap-2">
-                  {[1, 15, 25, 45, 60].map((mins) => (
+                  {[15, 25, 45, 60].map((mins) => (
                     <Button
                       key={mins}
                       variant={duration === mins ? 'default' : 'outline'}
@@ -268,18 +267,18 @@ export function PomodoroTimer() {
           {/* Timer Controls */}
           <div className="flex justify-center gap-4">
             {!timerState.is_running ? (
-              <Button onClick={handleStart} size="lg" className="w-32">
-                <Play className="mr-2 h-5 w-5" />
+              <Button onClick={handleStart} size="lg"  className="w-32">
+                {/*<PlayIcon className="mr-2 h-6 w-6" />*/}
                 {t('start')}
               </Button>
             ) : (
               <>
                 <Button onClick={handlePause} size="lg" variant="secondary" className="w-32">
-                  <Pause className="mr-2 h-5 w-5" />
+                  {/*<PauseCircle className="mr-2 h-6 w-6" />*/}
                   {timerState.is_paused ? t('resume') : t('pause')}
                 </Button>
                 <Button onClick={handleStop} size="lg" variant="destructive" className="w-32">
-                  <Square className="mr-2 h-5 w-5" />
+                  {/*<StopCircleIcon className="mr-2 h-6 w-6" />*/}
                   {t('stop')}
                 </Button>
               </>
