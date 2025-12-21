@@ -1,0 +1,30 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "time-tracker-desktop",
+  "outputfilename": "time-tracker-desktop",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "vkhangstack",
+    "email": "phamvankhang.tvi@gmail.com"
+  },
+  "info": {
+    "companyName": "vkhangstack",
+    "productName": "Time Tracker",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2025 vkhangstack",
+    "comments": "Pomodoro timer and task tracker with water reminder"
+  },
+  "build:windows": {
+    "ldflags": "-s -w",
+    "installer": "nsis"
+  },
+  "build:linux": {
+    "ldflags": "-s -w"
+  },
+  "build:darwin": {
+    "ldflags": "-s -w"
+  }
+}
