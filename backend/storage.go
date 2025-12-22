@@ -120,6 +120,26 @@ func (s *Storage) initTables() error {
 		last_reminder DATETIME,
 		FOREIGN KEY (user_id) REFERENCES users(id)
 	);
+
+	CREATE TABLE IF NOT EXISTS daily_retros (
+		id INTEGER PRIMARY KEY,
+		user_id INTEGER NOT NULL,
+		date TEXT NOT NULL,
+		retro_notes TEXT,
+		plan_notes TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id),
+		UNIQUE(user_id, date)
+	);
+
+	CREATE TABLE IF NOT EXISTS sessions (
+		token TEXT PRIMARY KEY,
+		user_id INTEGER NOT NULL,
+		expires_at DATETIME NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	);
 	`
 
 	_, err := s.db.Exec(schema)
@@ -219,7 +239,7 @@ func (s *Storage) CreateTask(task *Task) error {
 		query := `INSERT INTO tasks (id, user_id, title, description, completed, created_at) 
 				  VALUES (?, ?, ?, ?, ?, ?)`
 		_, err := s.db.Exec(query, task.ID, task.UserID, task.Title, task.Description,
-			task.Completed, task.CreatedAt)
+			task.Completed, task.CreatedAt.Format(time.RFC3339))
 		return err
 	}, 3)
 }
@@ -237,11 +257,28 @@ func (s *Storage) GetTasks(userID int64) ([]Task, error) {
 	var tasks []Task
 	for rows.Next() {
 		var task Task
+		var createdAtStr string
+		var completedAtStr sql.NullString
+
 		err := rows.Scan(&task.ID, &task.UserID, &task.Title, &task.Description,
-			&task.Completed, &task.CreatedAt, &task.CompletedAt)
+			&task.Completed, &createdAtStr, &completedAtStr)
 		if err != nil {
 			return nil, err
 		}
+
+		task.CreatedAt, err = time.Parse(time.RFC3339, createdAtStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse created_at: %v", err)
+		}
+
+		if completedAtStr.Valid {
+			t, err := time.Parse(time.RFC3339, completedAtStr.String)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse completed_at: %v", err)
+			}
+			task.CompletedAt = &t
+		}
+
 		tasks = append(tasks, task)
 	}
 	return tasks, nil
@@ -252,8 +289,15 @@ func (s *Storage) UpdateTask(task *Task) error {
 	return retryOnBusy(func() error {
 		query := `UPDATE tasks SET title = ?, description = ?, completed = ?, completed_at = ? 
 				  WHERE id = ? AND user_id = ?`
+
+		var completedAtStr *string
+		if task.CompletedAt != nil {
+			s := task.CompletedAt.Format(time.RFC3339)
+			completedAtStr = &s
+		}
+
 		_, err := s.db.Exec(query, task.Title, task.Description, task.Completed,
-			task.CompletedAt, task.ID, task.UserID)
+			completedAtStr, task.ID, task.UserID)
 		return err
 	}, 3)
 }
@@ -332,4 +376,128 @@ func (s *Storage) SaveWaterReminderSettings(userID int64, settings *WaterReminde
 // Close closes the database connection
 func (s *Storage) Close() error {
 	return s.db.Close()
+}
+
+// ClearData clears all data from the database
+func (s *Storage) ClearData() {
+	s.db.Exec("DELETE FROM tasks")
+	s.db.Exec("DELETE FROM pomodoro_sessions")
+	s.db.Exec("DELETE FROM water_reminders")
+	s.db.Exec("DELETE FROM daily_retros")
+	s.db.Exec("DELETE FROM sessions")
+}
+
+// CreateSession creates a new session
+func (s *Storage) CreateSession(session *Session) error {
+	return retryOnBusy(func() error {
+		query := `INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
+		_, err := s.db.Exec(query, session.Token, session.UserID,
+			session.ExpiresAt.Format(time.RFC3339),
+			session.CreatedAt.Format(time.RFC3339))
+		return err
+	}, 3)
+}
+
+// GetSession retrieves a session by token
+func (s *Storage) GetSession(token string) (*Session, error) {
+	query := `SELECT token, user_id, expires_at, created_at FROM sessions WHERE token = ?`
+	session := &Session{}
+	var expiresAtStr, createdAtStr string
+
+	err := s.db.QueryRow(query, token).Scan(&session.Token, &session.UserID, &expiresAtStr, &createdAtStr)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("session not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse times
+	session.ExpiresAt, err = time.Parse(time.RFC3339, expiresAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse expires_at: %v", err)
+	}
+	session.CreatedAt, err = time.Parse(time.RFC3339, createdAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse created_at: %v", err)
+	}
+
+	return session, err
+}
+
+// DeleteSession deletes a session by token
+func (s *Storage) DeleteSession(token string) error {
+	return retryOnBusy(func() error {
+		query := `DELETE FROM sessions WHERE token = ?`
+		_, err := s.db.Exec(query, token)
+		return err
+	}, 3)
+}
+
+// DeleteExpiredSessions deletes all expired sessions
+func (s *Storage) DeleteExpiredSessions() error {
+	return retryOnBusy(func() error {
+		query := `DELETE FROM sessions WHERE expires_at < ?`
+		_, err := s.db.Exec(query, time.Now().Format(time.RFC3339))
+		return err
+	}, 3)
+}
+
+// GetDailyRetro retrieves a daily retro for a user on a specific date
+func (s *Storage) GetDailyRetro(userID int64, date string) (*DailyRetro, error) {
+	query := `SELECT id, user_id, date, retro_notes, plan_notes, created_at, updated_at 
+	          FROM daily_retros WHERE user_id = ? AND date = ?`
+	retro := &DailyRetro{}
+	err := s.db.QueryRow(query, userID, date).Scan(
+		&retro.ID, &retro.UserID, &retro.Date, &retro.RetroNotes, &retro.PlanNotes,
+		&retro.CreatedAt, &retro.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil // Return nil if not found, not an error
+	}
+	return retro, err
+}
+
+// SaveDailyRetro saves or updates a daily retro
+func (s *Storage) SaveDailyRetro(retro *DailyRetro) error {
+	return retryOnBusy(func() error {
+		query := `INSERT INTO daily_retros (id, user_id, date, retro_notes, plan_notes, created_at, updated_at) 
+				  VALUES (?, ?, ?, ?, ?, ?, ?)
+				  ON CONFLICT(user_id, date) DO UPDATE SET
+				  retro_notes = excluded.retro_notes,
+				  plan_notes = excluded.plan_notes,
+				  updated_at = excluded.updated_at`
+		_, err := s.db.Exec(query, retro.ID, retro.UserID, retro.Date, retro.RetroNotes, retro.PlanNotes,
+			retro.CreatedAt, retro.UpdatedAt)
+		return err
+	}, 3)
+}
+
+// GetCompletedTasksForDate retrieves tasks completed on a specific date
+func (s *Storage) GetCompletedTasksForDate(userID int64, date string) ([]Task, error) {
+	// SQLite date function can match the date part of datetime
+	query := `SELECT id, user_id, title, description, completed, created_at, completed_at 
+	          FROM tasks 
+	          WHERE user_id = ? 
+	          AND completed = 1 
+	          AND date(completed_at) = ?
+	          ORDER BY completed_at DESC`
+
+	rows, err := s.db.Query(query, userID, date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		err := rows.Scan(&task.ID, &task.UserID, &task.Title, &task.Description,
+			&task.Completed, &task.CreatedAt, &task.CompletedAt)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
 }

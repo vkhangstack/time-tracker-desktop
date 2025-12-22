@@ -110,6 +110,23 @@ func (a *App) Login(username, password string) (*User, error) {
 		return nil, fmt.Errorf("invalid username or password")
 	}
 
+	// Generate session token
+	token, err := GenerateToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate token: %v", err)
+	}
+
+	// Save session (expires in 30 days)
+	session := &Session{
+		Token:     token,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(30 * 24 * time.Hour),
+		CreatedAt: time.Now(),
+	}
+	if err := a.storage.CreateSession(session); err != nil {
+		return nil, fmt.Errorf("failed to save session: %v", err)
+	}
+
 	// Set current user
 	a.currentUser = user
 
@@ -122,8 +139,9 @@ func (a *App) Login(username, password string) (*User, error) {
 		a.waterReminder.Start(user.ID, settings)
 	}
 
-	// Return user without password hash
+	// Return user without password hash, with token
 	user.PasswordHash = ""
+	user.Token = token
 	return user, nil
 }
 
@@ -140,9 +158,14 @@ func (a *App) GetCurrentUser() (*User, error) {
 }
 
 // Logout logs out the current user
-func (a *App) Logout() error {
+func (a *App) Logout(token string) error {
+	// Delete session from DB
+	if token != "" {
+		_ = a.storage.DeleteSession(token)
+	}
+
 	if a.currentUser == nil {
-		return fmt.Errorf("no user logged in")
+		return nil
 	}
 
 	// Stop water reminder
@@ -159,12 +182,31 @@ func (a *App) Logout() error {
 	return nil
 }
 
-// RestoreSession restores a user session by user ID
-func (a *App) RestoreSession(userID int64) (*User, error) {
-	// Get user from database
-	user, err := a.storage.GetUserByID(userID)
+// RestoreSession restores a user session by token
+func (a *App) RestoreSession(token string) (*User, error) {
+	// Clean up expired sessions first
+	_ = a.storage.DeleteExpiredSessions()
+
+	fmt.Printf("Restoring session with token: %s\n", token)
+
+	// Validate token
+	session, err := a.storage.GetSession(token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to restore session: %v", err)
+		fmt.Printf("Session lookup failed: %v\n", err)
+		return nil, fmt.Errorf("invalid session")
+	}
+
+	// Check expiration
+	if time.Now().After(session.ExpiresAt) {
+		fmt.Printf("Session expired. ExpiresAt: %v, Now: %v\n", session.ExpiresAt, time.Now())
+		_ = a.storage.DeleteSession(token)
+		return nil, fmt.Errorf("session expired")
+	}
+
+	// Get user from database
+	user, err := a.storage.GetUserByID(session.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("user not found")
 	}
 
 	// Set current user
@@ -182,6 +224,7 @@ func (a *App) RestoreSession(userID int64) (*User, error) {
 	// Return user without password hash
 	userCopy := *user
 	userCopy.PasswordHash = ""
+	userCopy.Token = token
 	return &userCopy, nil
 }
 
@@ -469,12 +512,102 @@ func (a *App) GetAppInfo() map[string]interface{} {
 	return map[string]interface{}{
 		"name":        "Time Tracker",
 		"version":     "1.0.0",
-		"author":      "vkhangstack",
+		"author":      "Pham Van Khang",
 		"email":       "phamvankhang.tvi@gmail.com",
 		"description": "Pomodoro timer and task tracker with water reminder",
 		"license":     "MIT",
 		"repository":  "https://github.com/vkhangstack/time-tracker-desktop",
 	}
+}
+
+// ========== Daily Retro Methods ==========
+
+// DailySummary represents a summary of the day
+type DailySummary struct {
+	Date           string      `json:"date"`
+	CompletedTasks []Task      `json:"completed_tasks"`
+	TotalFocusTime int         `json:"total_focus_time"` // in minutes
+	Retro          *DailyRetro `json:"retro,omitempty"`
+}
+
+// GetDailyRetro returns the daily retro for a specific date
+func (a *App) GetUserDailyRetro(date string) (*DailyRetro, error) {
+	if a.currentUser == nil {
+		return nil, fmt.Errorf("no user logged in")
+	}
+	return a.storage.GetDailyRetro(a.currentUser.ID, date)
+}
+
+// SaveDailyRetro saves the daily retro
+func (a *App) SaveDailyRetro(date, retroNotes, planNotes string) error {
+	if a.currentUser == nil {
+		return fmt.Errorf("no user logged in")
+	}
+
+	// Check if exists first to preserve ID if updating
+	existing, _ := a.storage.GetDailyRetro(a.currentUser.ID, date)
+
+	now := time.Now()
+	retro := &DailyRetro{
+		UserID:     a.currentUser.ID,
+		Date:       date,
+		RetroNotes: retroNotes,
+		PlanNotes:  planNotes,
+		UpdatedAt:  now,
+	}
+
+	if existing != nil {
+		retro.ID = existing.ID
+		retro.CreatedAt = existing.CreatedAt
+	} else {
+		retro.ID = GenerateID()
+		retro.CreatedAt = now
+	}
+
+	return a.storage.SaveDailyRetro(retro)
+}
+
+// GetDailySummary returns a summary for the day including tasks, focus time, and retro
+func (a *App) GetDailySummary(date string) (*DailySummary, error) {
+	if a.currentUser == nil {
+		return nil, fmt.Errorf("no user logged in")
+	}
+
+	// Get completed tasks
+	tasks, err := a.storage.GetCompletedTasksForDate(a.currentUser.ID, date)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get focus time (sum of pomodoro sessions completed on this date)
+	// We need a helper for this or reuse GetSessions but with specific times
+	// For simplicity, let's use GetSessions with start/end of day
+	startTime, _ := time.Parse("2006-01-02", date)
+	endTime := startTime.Add(24 * time.Hour).Add(-1 * time.Second)
+
+	sessions, err := a.storage.GetSessions(a.currentUser.ID, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	totalFocusTime := 0
+	for _, s := range sessions {
+		totalFocusTime += s.Duration
+	}
+
+	// Get retro
+	retro, err := a.storage.GetDailyRetro(a.currentUser.ID, date)
+	if err != nil {
+		// Log error but continue
+		fmt.Printf("Error fetching retro: %v\n", err)
+	}
+
+	return &DailySummary{
+		Date:           date,
+		CompletedTasks: tasks,
+		TotalFocusTime: totalFocusTime,
+		Retro:          retro,
+	}, nil
 }
 
 // ========= Utility Methods ==========

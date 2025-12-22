@@ -104,6 +104,7 @@ export function Settings() {
     try {
       await SetLanguage(lang);
       i18n.changeLanguage(lang);
+      localStorage.setItem('i18nextLng', lang);
       toast({
         title: t('success'),
         description: t('language_changed'),
@@ -169,14 +170,12 @@ export function Settings() {
             <button
               id="water-enabled"
               onClick={() => setWaterEnabled(!waterEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                waterEnabled ? 'bg-primary' : 'bg-gray-200'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${waterEnabled ? 'bg-primary' : 'bg-gray-200'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  waterEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${waterEnabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
           </div>

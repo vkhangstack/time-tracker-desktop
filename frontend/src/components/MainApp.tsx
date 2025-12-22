@@ -4,8 +4,10 @@ import { PomodoroTimer } from './PomodoroTimer';
 import { TaskList } from './TaskList';
 import { Reports } from './Reports';
 import { Settings } from './Settings';
+import { Tet2026Countdown } from './Tet2026Countdown';
+import { DailyRetro } from './DailyRetro';
 import { Logout as LogoutAPI } from '../../wailsjs/go/backend/App';
-import { Timer, ListTodo, BarChart3, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { Timer, ListTodo, BarChart3, Settings as SettingsIcon, LogOut, Calendar, ClipboardCheck } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface MainAppProps {
@@ -15,11 +17,12 @@ interface MainAppProps {
 
 export function MainApp({ user, onLogout }: MainAppProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'reports' | 'settings'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'reports' | 'settings' | 'tet2026' | 'review'>('timer');
 
   const handleLogout = async () => {
     try {
-      await LogoutAPI();
+      const token = localStorage.getItem('time-tracker-token');
+      await LogoutAPI(token || "");
       onLogout();
     } catch (err) {
       console.error('Logout failed:', err);
@@ -57,44 +60,60 @@ export function MainApp({ user, onLogout }: MainAppProps) {
           <div className="flex space-x-8">
             <button
               onClick={() => setActiveTab('timer')}
-              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${
-                activeTab === 'timer'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${activeTab === 'timer'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <Timer className="h-5 w-5" />
               <span className="font-medium">{t('timer')}</span>
             </button>
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${
-                activeTab === 'tasks'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${activeTab === 'tasks'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <ListTodo className="h-5 w-5" />
               <span className="font-medium">{t('tasks')}</span>
             </button>
             <button
               onClick={() => setActiveTab('reports')}
-              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${
-                activeTab === 'reports'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${activeTab === 'reports'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <BarChart3 className="h-5 w-5" />
               <span className="font-medium">{t('reports')}</span>
             </button>
             <button
+              onClick={() => setActiveTab('review')}
+              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${activeTab === 'review'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <ClipboardCheck className="h-5 w-5" />
+              <span className="font-medium">{t('daily_review')}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('tet2026')}
+              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${activeTab === 'tet2026'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <Calendar className="h-5 w-5" />
+              <span className="font-medium">{t('tet_2026')}</span>
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${
-                activeTab === 'settings'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center space-x-2 px-3 py-4 border-b-2 transition-colors ${activeTab === 'settings'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <SettingsIcon className="h-5 w-5" />
               <span className="font-medium">{t('settings')}</span>
@@ -108,6 +127,8 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         {activeTab === 'timer' && <PomodoroTimer />}
         {activeTab === 'tasks' && <TaskList />}
         {activeTab === 'reports' && <Reports />}
+        {activeTab === 'review' && <DailyRetro />}
+        {activeTab === 'tet2026' && <Tet2026Countdown />}
         {activeTab === 'settings' && <Settings />}
       </main>
     </div>

@@ -1,43 +1,29 @@
 export namespace backend {
 	
-	export class Notification {
-	    AppID: string;
-	    Title: string;
-	    Message: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Notification(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.AppID = source["AppID"];
-	        this.Title = source["Title"];
-	        this.Message = source["Message"];
-	    }
-	}
-	export class PomodoroSession {
+	export class DailyRetro {
 	    id: number;
 	    user_id: number;
-	    task_id?: number;
-	    duration: number;
+	    date: string;
+	    retro_notes: string;
+	    plan_notes: string;
 	    // Go type: time
-	    started_at: any;
+	    created_at: any;
 	    // Go type: time
-	    completed_at: any;
+	    updated_at: any;
 	
 	    static createFrom(source: any = {}) {
-	        return new PomodoroSession(source);
+	        return new DailyRetro(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.user_id = source["user_id"];
-	        this.task_id = source["task_id"];
-	        this.duration = source["duration"];
-	        this.started_at = this.convertValues(source["started_at"], null);
-	        this.completed_at = this.convertValues(source["completed_at"], null);
+	        this.date = source["date"];
+	        this.retro_notes = source["retro_notes"];
+	        this.plan_notes = source["plan_notes"];
+	        this.created_at = this.convertValues(source["created_at"], null);
+	        this.updated_at = this.convertValues(source["updated_at"], null);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -102,6 +88,101 @@ export namespace backend {
 		    return a;
 		}
 	}
+	export class DailySummary {
+	    date: string;
+	    completed_tasks: Task[];
+	    total_focus_time: number;
+	    retro?: DailyRetro;
+	
+	    static createFrom(source: any = {}) {
+	        return new DailySummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.date = source["date"];
+	        this.completed_tasks = this.convertValues(source["completed_tasks"], Task);
+	        this.total_focus_time = source["total_focus_time"];
+	        this.retro = this.convertValues(source["retro"], DailyRetro);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Notification {
+	    AppID: string;
+	    Title: string;
+	    Message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Notification(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.AppID = source["AppID"];
+	        this.Title = source["Title"];
+	        this.Message = source["Message"];
+	    }
+	}
+	export class PomodoroSession {
+	    id: number;
+	    user_id: number;
+	    task_id?: number;
+	    duration: number;
+	    // Go type: time
+	    started_at: any;
+	    // Go type: time
+	    completed_at: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new PomodoroSession(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.user_id = source["user_id"];
+	        this.task_id = source["task_id"];
+	        this.duration = source["duration"];
+	        this.started_at = this.convertValues(source["started_at"], null);
+	        this.completed_at = this.convertValues(source["completed_at"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class TimerState {
 	    is_running: boolean;
 	    is_paused: boolean;
@@ -148,6 +229,7 @@ export namespace backend {
 	    username: string;
 	    email: string;
 	    language_preference: string;
+	    token?: string;
 	    // Go type: time
 	    created_at: any;
 	
@@ -161,6 +243,7 @@ export namespace backend {
 	        this.username = source["username"];
 	        this.email = source["email"];
 	        this.language_preference = source["language_preference"];
+	        this.token = source["token"];
 	        this.created_at = this.convertValues(source["created_at"], null);
 	    }
 	

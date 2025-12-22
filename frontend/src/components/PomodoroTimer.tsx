@@ -19,7 +19,7 @@ import { EventsOn } from '../../wailsjs/runtime/runtime';
 export function PomodoroTimer() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [duration, setDuration] = useState(15);
+  const [duration, setDuration] = useState(25);
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [timerState, setTimerState] = useState<any>({
@@ -266,7 +266,7 @@ export function PomodoroTimer() {
           {/* Timer Controls */}
           <div className="flex justify-center gap-4">
             {!timerState.is_running ? (
-              <Button onClick={handleStart} size="lg"  className="w-32">
+              <Button onClick={handleStart} size="lg" className="w-32">
                 {/*<PlayIcon className="mr-2 h-6 w-6" />*/}
                 {t('start')}
               </Button>

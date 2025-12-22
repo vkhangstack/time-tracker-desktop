@@ -26,6 +26,10 @@ export function GetCurrentUser() {
   return window['go']['backend']['App']['GetCurrentUser']();
 }
 
+export function GetDailySummary(arg1) {
+  return window['go']['backend']['App']['GetDailySummary'](arg1);
+}
+
 export function GetLanguage() {
   return window['go']['backend']['App']['GetLanguage']();
 }
@@ -46,6 +50,10 @@ export function GetTimerState() {
   return window['go']['backend']['App']['GetTimerState']();
 }
 
+export function GetUserDailyRetro(arg1) {
+  return window['go']['backend']['App']['GetUserDailyRetro'](arg1);
+}
+
 export function GetWaterReminderSettings() {
   return window['go']['backend']['App']['GetWaterReminderSettings']();
 }
@@ -62,8 +70,8 @@ export function Login(arg1, arg2) {
   return window['go']['backend']['App']['Login'](arg1, arg2);
 }
 
-export function Logout() {
-  return window['go']['backend']['App']['Logout']();
+export function Logout(arg1) {
+  return window['go']['backend']['App']['Logout'](arg1);
 }
 
 export function MinimizeWindow() {
@@ -92,6 +100,10 @@ export function RestoreSession(arg1) {
 
 export function ResumePomodoro() {
   return window['go']['backend']['App']['ResumePomodoro']();
+}
+
+export function SaveDailyRetro(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['SaveDailyRetro'](arg1, arg2, arg3);
 }
 
 export function SaveWaterReminderSettings(arg1, arg2, arg3) {

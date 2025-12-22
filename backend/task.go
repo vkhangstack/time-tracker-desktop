@@ -42,3 +42,14 @@ type WaterReminderSettings struct {
 	CustomIntervalMins *int      `json:"custom_interval_mins,omitempty"` // Optional custom interval
 	LastReminder       time.Time `json:"last_reminder"`
 }
+
+// DailyRetro represents a daily retrospective and plan
+type DailyRetro struct {
+	ID         int64     `json:"id"`
+	UserID     int64     `json:"user_id"`
+	Date       string    `json:"date"` // Format: YYYY-MM-DD
+	RetroNotes string    `json:"retro_notes"`
+	PlanNotes  string    `json:"plan_notes"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}

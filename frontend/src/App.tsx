@@ -4,10 +4,11 @@ import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { MainApp } from './components/MainApp';
 import { Toaster } from './components/Toaster';
+import { Loading } from './components/Loading';
 import { GetCurrentUser, RestoreSession } from '../wailsjs/go/backend/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
-const SESSION_KEY = 'time-tracker-session';
+const SESSION_KEY = 'time-tracker-token';
 
 function App() {
   const { i18n } = useTranslation();
@@ -28,18 +29,24 @@ function App() {
           i18n.changeLanguage(currentUser.language_preference);
         }
         // Save to localStorage for next time
-        if (currentUser?.id) {
-          localStorage.setItem(SESSION_KEY, currentUser.id.toString());
+        if (currentUser?.token) {
+          localStorage.setItem(SESSION_KEY, currentUser.token);
         }
-      } catch {
+      } catch (err) {
+        console.log('Backend has no current user:', err);
         // Backend has no current user, try to restore from localStorage
-        const savedUserId = localStorage.getItem(SESSION_KEY);
-        if (savedUserId) {
+        const token = localStorage.getItem(SESSION_KEY);
+        console.log('Found token in localStorage:', token ? 'Yes' : 'No');
+
+        if (token) {
           try {
-            const restoredUser = await RestoreSession(parseInt(savedUserId));
+            console.log('Attempting to restore session with token...');
+            const restoredUser = await RestoreSession(token);
+            console.log('Session restored successfully:', restoredUser.username);
             setUser(restoredUser);
             if (restoredUser?.language_preference) {
               i18n.changeLanguage(restoredUser.language_preference);
+              localStorage.setItem('i18nextLng', restoredUser.language_preference);
             }
           } catch (err) {
             console.error('Failed to restore session:', err);
@@ -56,7 +63,7 @@ function App() {
     };
 
     EventsOn('water:reminder', () => {
-            console.log('Time to drink water!');
+      console.log('Time to drink water!');
     });
 
     restoreUserSession();
@@ -66,10 +73,11 @@ function App() {
     setUser(loggedInUser);
     if (loggedInUser?.language_preference) {
       i18n.changeLanguage(loggedInUser.language_preference);
+      localStorage.setItem('i18nextLng', loggedInUser.language_preference);
     }
     // Save session to localStorage
-    if (loggedInUser?.id) {
-      localStorage.setItem(SESSION_KEY, loggedInUser.id.toString());
+    if (loggedInUser?.token) {
+      localStorage.setItem(SESSION_KEY, loggedInUser.token);
     }
   };
 
@@ -81,9 +89,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
-      </div>
+      <Loading text={i18n.t('loading')} />
     );
   }
 

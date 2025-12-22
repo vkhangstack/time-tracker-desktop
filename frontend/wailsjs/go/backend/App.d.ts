@@ -15,6 +15,8 @@ export function GetAppInfo():Promise<Record<string, any>>;
 
 export function GetCurrentUser():Promise<backend.User>;
 
+export function GetDailySummary(arg1:string):Promise<backend.DailySummary>;
+
 export function GetLanguage():Promise<string>;
 
 export function GetReport(arg1:string,arg2:string):Promise<Record<string, any>>;
@@ -25,6 +27,8 @@ export function GetTasks():Promise<Array<backend.Task>>;
 
 export function GetTimerState():Promise<backend.TimerState>;
 
+export function GetUserDailyRetro(arg1:string):Promise<backend.DailyRetro>;
+
 export function GetWaterReminderSettings():Promise<backend.WaterReminderSettings>;
 
 export function HideWindow():Promise<void>;
@@ -33,7 +37,7 @@ export function LockScreen():Promise<void>;
 
 export function Login(arg1:string,arg2:string):Promise<backend.User>;
 
-export function Logout():Promise<void>;
+export function Logout(arg1:string):Promise<void>;
 
 export function MinimizeWindow():Promise<void>;
 
@@ -45,9 +49,11 @@ export function PushNotification(arg1:backend.Notification):Promise<void>;
 
 export function Register(arg1:string,arg2:string,arg3:string):Promise<void>;
 
-export function RestoreSession(arg1:number):Promise<backend.User>;
+export function RestoreSession(arg1:string):Promise<backend.User>;
 
 export function ResumePomodoro():Promise<void>;
+
+export function SaveDailyRetro(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SaveWaterReminderSettings(arg1:boolean,arg2:number,arg3:any):Promise<void>;
 

@@ -14,6 +14,13 @@ func (a *App) CreateAppMenu() *menu.Menu {
 	fileMenu.AddText("Reload", keys.CmdOrCtrl("r"), func(_ *menu.CallbackData) {
 		runtime.WindowReload(a.ctx)
 	})
+	fileMenu.AddText("Clear data", keys.Combo("c", keys.ShiftKey, keys.OptionOrAltKey), func(_ *menu.CallbackData) {
+		a.storage.ClearData()
+		a.PushNotification(&Notification{
+			Title:   "Data cleared",
+			Message: "All data has been cleared.",
+		})
+	})
 	fileMenu.AddText("Quit", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
 		runtime.Quit(a.ctx)
 	})
