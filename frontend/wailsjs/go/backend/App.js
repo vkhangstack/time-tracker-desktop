@@ -78,6 +78,10 @@ export function Ping() {
   return window['go']['backend']['App']['Ping']();
 }
 
+export function PushNotification(arg1) {
+  return window['go']['backend']['App']['PushNotification'](arg1);
+}
+
 export function Register(arg1, arg2, arg3) {
   return window['go']['backend']['App']['Register'](arg1, arg2, arg3);
 }

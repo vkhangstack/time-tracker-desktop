@@ -19,6 +19,9 @@ func (a *App) CreateAppMenu() *menu.Menu {
 	})
 
 	helpMenu := appMenu.AddSubmenu("Help")
+	helpMenu.AddText("Documentation", nil, func(_ *menu.CallbackData) {
+		runtime.BrowserOpenURL(a.ctx, "https://github.com/vkhangstack/time-tracker-desktop#readme")
+	})
 	helpMenu.AddText("About", nil, func(_ *menu.CallbackData) {
 		runtime.EventsEmit(a.ctx, "show:about")
 	})

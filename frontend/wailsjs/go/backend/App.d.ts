@@ -41,6 +41,8 @@ export function PausePomodoro():Promise<void>;
 
 export function Ping():Promise<string>;
 
+export function PushNotification(arg1:backend.Notification):Promise<void>;
+
 export function Register(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RestoreSession(arg1:number):Promise<backend.User>;

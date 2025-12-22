@@ -1,5 +1,21 @@
 export namespace backend {
 	
+	export class Notification {
+	    AppID: string;
+	    Title: string;
+	    Message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Notification(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.AppID = source["AppID"];
+	        this.Title = source["Title"];
+	        this.Message = source["Message"];
+	    }
+	}
 	export class PomodoroSession {
 	    id: number;
 	    user_id: number;

@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"log"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -79,6 +81,16 @@ func (wr *WaterReminder) notify() {
 	// Emit water reminder event
 	if wr.app.ctx != nil {
 		runtime.EventsEmit(wr.app.ctx, "water:reminder")
+
+		err := wr.app.PushNotification(&Notification{
+			AppID:   "Time Tracker",
+			Title:   "Water Reminder",
+			Message: "It's time to drink water!",
+		})
+
+		if err != nil {
+			log.Fatalf("push toast error: %v", err)
+		}
 	}
 }
 

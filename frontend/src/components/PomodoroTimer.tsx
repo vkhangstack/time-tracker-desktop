@@ -12,10 +12,9 @@ import {
   GetTimerState,
   CompletePomodoro,
   GetTasks,
-    LockScreen
+  LockScreen
 } from '../../wailsjs/go/backend/App';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
-import {PlayCircle, PauseCircle, StopCircle, Play, PlayIcon, StopCircleIcon, PlayCircleIcon} from 'lucide-react';
 
 export function PomodoroTimer() {
   const { t } = useTranslation();
