@@ -10,6 +10,8 @@ import {
   SaveWaterReminderSettings,
   SetLanguage,
   GetAppInfo,
+  GetServerHost,
+  SaveServerHost,
 } from '../../wailsjs/go/backend/App';
 import { Droplet, Globe, Info } from 'lucide-react';
 
@@ -21,11 +23,14 @@ export function Settings() {
   const [customInterval, setCustomInterval] = useState('');
   const [useCustomInterval, setUseCustomInterval] = useState(false);
   const [appInfo, setAppInfo] = useState<any>(null);
-  const [showAbout, setShowAbout] = useState(false);
+  const [serverHost, setServerHost] = useState('');
+  const [originalServerHost, setOriginalServerHost] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadSettings();
     loadAppInfo();
+    loadServerSettings();
   }, []);
 
   const loadSettings = async () => {
@@ -52,6 +57,18 @@ export function Settings() {
       setAppInfo(info);
     } catch (err) {
       console.error('Failed to load app info:', err);
+    }
+  };
+
+  const loadServerSettings = async () => {
+    try {
+      const host = await GetServerHost();
+      if (host) {
+        setServerHost(host);
+        setOriginalServerHost(host);
+      }
+    } catch (err) {
+      console.error('Failed to load server settings:', err);
     }
   };
 
@@ -99,6 +116,30 @@ export function Settings() {
       });
     }
   };
+
+  const handleSaveServerHost = async () => {
+    setIsSaving(true);
+    try {
+      await SaveServerHost(serverHost);
+      setOriginalServerHost(serverHost);
+      toast({
+        title: t('success'),
+        description: t('server_host_saved'),
+        variant: 'success',
+      });
+    } catch (err) {
+      console.error('Failed to save server host:', err);
+      toast({
+        title: t('error'),
+        description: t('failed_to_save_server_host'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
 
   const handleChangeLanguage = async (lang: string) => {
     try {
@@ -234,6 +275,37 @@ export function Settings() {
           )}
 
           <Button onClick={handleSaveWaterSettings}>{t('save')}</Button>
+        </CardContent>
+      </Card>
+
+      {/* Zone Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Globe className="h-5 w-5" />
+            <CardTitle>{t('server_host')}</CardTitle>
+          </div>
+          <CardDescription>{t('server_host_desc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="server-zone">{t('server')}</Label>
+            <Input
+              id="server-zone"
+              placeholder="https://api.server.com"
+              value={serverHost}
+              onChange={(e) => setServerHost(e.target.value)}
+            />
+            <p className="text-[0.8rem] text-muted-foreground">
+              {t('server_host_helper')}
+            </p>
+          </div>
+          <Button 
+            onClick={handleSaveServerHost} 
+            disabled={serverHost === originalServerHost || isSaving}
+          >
+            {isSaving ? t('saving') : t('save')}
+          </Button>
         </CardContent>
       </Card>
 

@@ -168,5 +168,11 @@
   "register_success": "Đăng ký thành công",
   "register_failed": "Đăng ký thất bại. Vui lòng thử lại.",
   "custom_interval_required": "Vui lòng nhập giá trị khoảng thời gian tùy chỉnh",
-  "custom_interval_range": "Khoảng thời gian tùy chỉnh phải từ 1 đến 1440 phút"
+  "custom_interval_range": "Khoảng thời gian tùy chỉnh phải từ 1 đến 1440 phút",
+  "server_host": "Máy Chủ",
+  "server_host_desc": "Cấu hình máy chủ để sử dụng dữ liệu sao lưu đồng bộ dữ liệu",
+  "server": "Máy chủ",
+  "server_host_helper": "Sử dụng dữ liệu sao lưu đồng bộ dữ liệu",
+  "server_host_saved": "Đã lưu máy chủ thành công",
+  "failed_to_save_server_host": "Lưu máy chủ thất bại"
 }

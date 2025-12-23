@@ -140,6 +140,12 @@ func (s *Storage) initTables() error {
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (user_id) REFERENCES users(id)
 	);
+
+	CREATE TABLE IF NOT EXISTS settings (
+		key TEXT PRIMARY KEY,
+		value TEXT,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
 	`
 
 	_, err := s.db.Exec(schema)
@@ -500,4 +506,28 @@ func (s *Storage) GetCompletedTasksForDate(userID int64, date string) ([]Task, e
 		tasks = append(tasks, task)
 	}
 	return tasks, nil
+}
+
+// GetSetting retrieves a setting value by key
+func (s *Storage) GetSetting(key string) (string, error) {
+	query := `SELECT value FROM settings WHERE key = ?`
+	var value string
+	err := s.db.QueryRow(query, key).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", nil // Return empty string if not found
+	}
+	return value, err
+}
+
+// SaveSetting saves or updates a setting value
+func (s *Storage) SaveSetting(key, value string) error {
+	return retryOnBusy(func() error {
+		query := `INSERT INTO settings (key, value, updated_at) 
+				  VALUES (?, ?, CURRENT_TIMESTAMP)
+				  ON CONFLICT(key) DO UPDATE SET
+				  value = excluded.value,
+				  updated_at = CURRENT_TIMESTAMP`
+		_, err := s.db.Exec(query, key, value)
+		return err
+	}, 3)
 }

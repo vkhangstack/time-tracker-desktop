@@ -165,5 +165,11 @@
   "register_success": "Registration successful",
   "register_failed": "Registration failed. Please try again.",
   "custom_interval_required": "Please enter a custom interval value",
-  "custom_interval_range": "Custom interval must be between 1 and 1440 minutes"
+  "custom_interval_range": "Custom interval must be between 1 and 1440 minutes",
+  "server_host": "Server Host",
+  "server_host_desc": "Configure server host use backup data sync data",
+  "server": "Server",
+  "server_host_helper": "Use backup data sync data",
+  "server_host_saved": "Server host saved successfully",
+  "failed_to_save_server_host": "Failed to save server host"
 }

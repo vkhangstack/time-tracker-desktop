@@ -647,3 +647,28 @@ func (a *App) LockScreen() error {
 func (a *App) Ping() string {
 	return "pong"
 }
+
+// ========== Server Settings Methods ==========
+
+// GetServerHost returns the configured server host
+func (a *App) GetServerHost() (string, error) {
+	if a.currentUser == nil {
+		return "", fmt.Errorf("no user logged in")
+	}
+	// We might want server settings to be global or per user.
+	// Given the schema "key, value", it's global.
+	// If per user, key should be "server_host:<userID>"
+	// Let's assume it's a global setting for this desktop instance for now,
+	// or we can prefix it if we want per-user.
+	// The request implies "Server Host" configuration for the app.
+	// But let's stick to global key 'server_host' for now as it seems to be an app config.
+	return a.storage.GetSetting("server_host")
+}
+
+// SaveServerHost saves the server host configuration
+func (a *App) SaveServerHost(host string) error {
+	if a.currentUser == nil {
+		return fmt.Errorf("no user logged in")
+	}
+	return a.storage.SaveSetting("server_host", host)
+}

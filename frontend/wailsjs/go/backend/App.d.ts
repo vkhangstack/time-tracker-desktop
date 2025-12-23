@@ -21,6 +21,8 @@ export function GetLanguage():Promise<string>;
 
 export function GetReport(arg1:string,arg2:string):Promise<Record<string, any>>;
 
+export function GetServerHost():Promise<string>;
+
 export function GetSessions(arg1:string,arg2:string):Promise<Array<backend.PomodoroSession>>;
 
 export function GetTasks():Promise<Array<backend.Task>>;
@@ -54,6 +56,8 @@ export function RestoreSession(arg1:string):Promise<backend.User>;
 export function ResumePomodoro():Promise<void>;
 
 export function SaveDailyRetro(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function SaveServerHost(arg1:string):Promise<void>;
 
 export function SaveWaterReminderSettings(arg1:boolean,arg2:number,arg3:any):Promise<void>;
 

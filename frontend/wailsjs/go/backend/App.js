@@ -38,6 +38,10 @@ export function GetReport(arg1, arg2) {
   return window['go']['backend']['App']['GetReport'](arg1, arg2);
 }
 
+export function GetServerHost() {
+  return window['go']['backend']['App']['GetServerHost']();
+}
+
 export function GetSessions(arg1, arg2) {
   return window['go']['backend']['App']['GetSessions'](arg1, arg2);
 }
@@ -104,6 +108,10 @@ export function ResumePomodoro() {
 
 export function SaveDailyRetro(arg1, arg2, arg3) {
   return window['go']['backend']['App']['SaveDailyRetro'](arg1, arg2, arg3);
+}
+
+export function SaveServerHost(arg1) {
+  return window['go']['backend']['App']['SaveServerHost'](arg1);
 }
 
 export function SaveWaterReminderSettings(arg1, arg2, arg3) {
