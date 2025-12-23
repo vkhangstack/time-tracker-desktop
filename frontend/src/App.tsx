@@ -6,7 +6,6 @@ import { MainApp } from './components/MainApp';
 import { Toaster } from './components/Toaster';
 import { Loading } from './components/Loading';
 import { GetCurrentUser, RestoreSession } from '../wailsjs/go/backend/App';
-import { EventsOn } from '../wailsjs/runtime/runtime';
 
 const SESSION_KEY = 'time-tracker-token';
 
@@ -15,8 +14,6 @@ function App() {
   const [user, setUser] = useState<any>(null);
   const [showRegister, setShowRegister] = useState(false);
   const [loading, setLoading] = useState(true);
-
-
 
   useEffect(() => {
     // Try to restore session on app start
@@ -61,10 +58,6 @@ function App() {
         setLoading(false);
       }
     };
-
-    EventsOn('water:reminder', () => {
-      console.log('Time to drink water!');
-    });
 
     restoreUserSession();
   }, [i18n]);

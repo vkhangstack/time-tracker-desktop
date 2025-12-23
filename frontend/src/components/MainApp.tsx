@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PomodoroTimer } from './PomodoroTimer';
 import { TaskList } from './TaskList';
@@ -9,6 +9,7 @@ import { DailyRetro } from './DailyRetro';
 import { Logout as LogoutAPI } from '../../wailsjs/go/backend/App';
 import { Timer, ListTodo, BarChart3, Settings as SettingsIcon, LogOut, Calendar, ClipboardCheck } from 'lucide-react';
 import { Button } from './ui/button';
+import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime';
 
 interface MainAppProps {
   user: any;
@@ -18,6 +19,19 @@ interface MainAppProps {
 export function MainApp({ user, onLogout }: MainAppProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'reports' | 'settings' | 'tet2026' | 'review'>('timer');
+
+
+  useEffect(() => {
+    EventsOff('show:about');
+    EventsOn('show:about', () => {
+      console.log('show:about event received in MainApp');
+      setActiveTab("settings");
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 100);
+    });
+  },[])
+
 
   const handleLogout = async () => {
     try {
@@ -131,9 +145,8 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         {activeTab === 'tet2026' && <Tet2026Countdown />}
         {activeTab === 'settings' && <Settings />}
       </main>
+
+     
     </div>
   );
 }
-
-
-
