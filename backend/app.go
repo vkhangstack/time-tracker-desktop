@@ -17,6 +17,7 @@ type App struct {
 	currentUser   *User
 	pomodoroTimer *PomodoroTimer
 	waterReminder *WaterReminder
+	driveService  *DriveService
 }
 
 // NewApp creates a new App application struct
@@ -49,6 +50,9 @@ func (a *App) Startup(ctx context.Context) {
 
 	// Initialize water reminder
 	a.waterReminder = NewWaterReminder(a)
+
+	// Initialize Drive service
+	a.driveService = NewDriveService(a.storage)
 }
 
 // shutdown is called when the app is closing
@@ -671,4 +675,56 @@ func (a *App) SaveServerHost(host string) error {
 		return fmt.Errorf("no user logged in")
 	}
 	return a.storage.SaveSetting("server_host", host)
+}
+
+// ========== Google Drive Methods ==========
+
+// SaveGoogleClientCredentials saves the Client ID and Secret
+func (a *App) SaveGoogleClientCredentials(clientID, clientSecret string) error {
+	return a.driveService.SaveCredentials(clientID, clientSecret)
+}
+
+// HasGoogleCredentials checks if Client ID and Secret are configured
+func (a *App) HasGoogleCredentials() bool {
+	_, err := a.driveService.getOAuthConfig()
+	return err == nil
+}
+
+// GoogleLogin returns the URL for the user to visit to authorize the app
+func (a *App) GoogleLogin() (string, error) {
+	return a.driveService.GetAuthURL()
+}
+
+// GoogleCallback exchanges the authorization code for a token
+func (a *App) GoogleCallback(code string) error {
+	return a.driveService.ExchangeCode(code)
+}
+
+// IsGoogleAuthenticated checks if the user has a valid token
+func (a *App) IsGoogleAuthenticated() bool {
+	return a.driveService.IsAuthenticated()
+}
+
+// BackupToDrive exports data and uploads it to Google Drive
+func (a *App) BackupToDrive() error {
+	if !a.driveService.IsAuthenticated() {
+		return fmt.Errorf("not authenticated")
+	}
+	data, err := a.storage.ExportJSON()
+	if err != nil {
+		return fmt.Errorf("failed to export data: %v", err)
+	}
+	return a.driveService.UploadData(data)
+}
+
+// RestoreFromDrive downloads data from Google Drive and imports it
+func (a *App) RestoreFromDrive() error {
+	if !a.driveService.IsAuthenticated() {
+		return fmt.Errorf("not authenticated")
+	}
+	data, err := a.driveService.DownloadData()
+	if err != nil {
+		return fmt.Errorf("failed to download data: %v", err)
+	}
+	return a.storage.ImportJSON(data)
 }

@@ -12,8 +12,16 @@ import {
   GetAppInfo,
   GetServerHost,
   SaveServerHost,
+  GoogleLogin,
+  GoogleCallback,
+  SaveGoogleClientCredentials,
+  HasGoogleCredentials,
+  IsGoogleAuthenticated,
+  BackupToDrive,
+  RestoreFromDrive,
 } from '../../wailsjs/go/backend/App';
-import { Droplet, Globe, Info } from 'lucide-react';
+import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
+import { Droplet, Globe, Info, Cloud, Check, Loader2, Save } from 'lucide-react';
 
 export function Settings() {
   const { t, i18n } = useTranslation();
@@ -27,11 +35,34 @@ export function Settings() {
   const [originalServerHost, setOriginalServerHost] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Google Drive State
+  const [hasGoogleCreds, setHasGoogleCreds] = useState(false);
+  const [isGoogleAuth, setIsGoogleAuth] = useState(false);
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [authCode, setAuthCode] = useState('');
+  const [showAuthCodeInput, setShowAuthCodeInput] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
   useEffect(() => {
     loadSettings();
     loadAppInfo();
     loadServerSettings();
+    checkGoogleStatus();
   }, []);
+
+  const checkGoogleStatus = async () => {
+    try {
+      const hasCreds = await HasGoogleCredentials();
+      setHasGoogleCreds(hasCreds);
+      if (hasCreds) {
+        const isAuth = await IsGoogleAuthenticated();
+        setIsGoogleAuth(isAuth);
+      }
+    } catch (err) {
+      console.error('Failed to check Google status:', err);
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -300,12 +331,127 @@ export function Settings() {
               {t('server_host_helper')}
             </p>
           </div>
-          <Button 
-            onClick={handleSaveServerHost} 
+          <Button
+            onClick={handleSaveServerHost}
             disabled={serverHost === originalServerHost || isSaving}
           >
             {isSaving ? t('saving') : t('save')}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Google Drive Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Cloud className="h-5 w-5" />
+            <CardTitle>Google Drive Sync</CardTitle>
+          </div>
+          <CardDescription>Backup and restore your data using Google Drive</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!hasGoogleCreds ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-md text-sm">
+                To enable sync, you need to provide your Google Cloud Client ID and Secret.
+                <br />
+                1. Go to Google Cloud Console.
+                <br />
+                2. Create a specific project.
+                <br />
+                3. Create OAuth 2.0 Credentials (Desktop App).
+              </div>
+              <div className="space-y-2">
+                <Label>Client ID</Label>
+                <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="...apps.googleusercontent.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Client Secret</Label>
+                <Input value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} type="password" />
+              </div>
+              <Button onClick={async () => {
+                try {
+                  await SaveGoogleClientCredentials(clientId, clientSecret);
+                  setHasGoogleCreds(true);
+                  toast({ title: 'Success', description: 'Credentials saved', variant: 'success' });
+                } catch (e) {
+                  toast({ title: 'Error', description: 'Failed to save credentials', variant: 'destructive' });
+                }
+              }}>
+                <Save className="mr-2 h-4 w-4" /> Save Credentials
+              </Button>
+            </div>
+          ) : !isGoogleAuth ? (
+            <div className="space-y-4">
+              {!showAuthCodeInput ? (
+                <Button onClick={async () => {
+                  try {
+                    const url = await GoogleLogin();
+                    BrowserOpenURL(url);
+                    setShowAuthCodeInput(true);
+                  } catch (e) {
+                    toast({ title: 'Error', description: 'Failed to start login', variant: 'destructive' });
+                  }
+                }}>
+                  Connect to Google Drive
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Paste Authorization Code</Label>
+                  <Input value={authCode} onChange={(e) => setAuthCode(e.target.value)} placeholder="4/0..." />
+                  <Button onClick={async () => {
+                    try {
+                      await GoogleCallback(authCode);
+                      setIsGoogleAuth(true);
+                      setShowAuthCodeInput(false);
+                      toast({ title: 'Success', description: 'Connected successfully', variant: 'success' });
+                    } catch (e) {
+                      toast({ title: 'Error', description: 'Failed to verify code', variant: 'destructive' });
+                    }
+                  }}>
+                    Verify Code
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center text-green-600">
+                <Check className="mr-2 h-5 w-5" /> Connected to Google Drive
+              </div>
+              <div className="flex gap-4">
+                <Button onClick={async () => {
+                  setIsSyncing(true);
+                  try {
+                    await BackupToDrive();
+                    toast({ title: 'Success', description: 'Backup completed', variant: 'success' });
+                  } catch (e) {
+                    toast({ title: 'Error', description: 'Backup failed', variant: 'destructive' });
+                  } finally {
+                    setIsSyncing(false);
+                  }
+                }} disabled={isSyncing}>
+                  {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Backup to Drive
+                </Button>
+                <Button variant="outline" onClick={async () => {
+                  if (!confirm('This will overwrite current data. Continue?')) return;
+                  setIsSyncing(true);
+                  try {
+                    await RestoreFromDrive();
+                    toast({ title: 'Success', description: 'Restore completed. Please restart app.', variant: 'success' });
+                  } catch (e) {
+                    toast({ title: 'Error', description: 'Restore failed', variant: 'destructive' });
+                  } finally {
+                    setIsSyncing(false);
+                  }
+                }} disabled={isSyncing}>
+                  {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Restore from Drive
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

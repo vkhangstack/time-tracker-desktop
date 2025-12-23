@@ -3,6 +3,8 @@
 import {menu} from '../models';
 import {backend} from '../models';
 
+export function BackupToDrive():Promise<void>;
+
 export function CompletePomodoro(arg1:number,arg2:any):Promise<void>;
 
 export function CreateAppMenu():Promise<menu.Menu>;
@@ -33,7 +35,15 @@ export function GetUserDailyRetro(arg1:string):Promise<backend.DailyRetro>;
 
 export function GetWaterReminderSettings():Promise<backend.WaterReminderSettings>;
 
+export function GoogleCallback(arg1:string):Promise<void>;
+
+export function GoogleLogin():Promise<string>;
+
+export function HasGoogleCredentials():Promise<boolean>;
+
 export function HideWindow():Promise<void>;
+
+export function IsGoogleAuthenticated():Promise<boolean>;
 
 export function LockScreen():Promise<void>;
 
@@ -51,11 +61,15 @@ export function PushNotification(arg1:backend.Notification):Promise<void>;
 
 export function Register(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function RestoreFromDrive():Promise<void>;
+
 export function RestoreSession(arg1:string):Promise<backend.User>;
 
 export function ResumePomodoro():Promise<void>;
 
 export function SaveDailyRetro(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function SaveGoogleClientCredentials(arg1:string,arg2:string):Promise<void>;
 
 export function SaveServerHost(arg1:string):Promise<void>;
 
